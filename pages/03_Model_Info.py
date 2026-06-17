@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 
-st.markdown("# 📚 Model Info")
+st.markdown("# Model Info")
 
 st.markdown("---")
 st.markdown("## Alur Pipeline")

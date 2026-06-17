@@ -6,14 +6,20 @@ import joblib
 st.markdown("# 📊 Prediksi Distribusi Pupuk")
 
 # Get artifacts from session state
-artifacts = st.session_state.artifacts
-df = artifacts.get("df")
+if "artifacts" in st.session_state:
+    artifacts = st.session_state.artifacts
+    df = artifacts.get("df")
+else:
+    st.error("Sistem tidak dapat memuat artifacts! Silakan refresh halaman!")
+    artifacts = {}
+    df = None
 
 if df is not None:
     # Get list of kabupaten
     list_kabupaten = sorted(df['kabupaten'].unique())
 else:
     list_kabupaten = []
+    st.warning("Data kabupaten tidak dapat dimuat! Masukan nama kabupaten secara manual!")
 
 # --- Form Input ---
 with st.form("prediction_form"):
@@ -21,7 +27,10 @@ with st.form("prediction_form"):
     
     col1, col2, col3 = st.columns(3)
     with col1:
-        kabupaten = st.selectbox("Kabupaten/Kota", list_kabupaten)
+        if list_kabupaten:
+            kabupaten = st.selectbox("Kabupaten/Kota", list_kabupaten)
+        else:
+            kabupaten = st.text_input("Kabupaten/Kota", "Contoh: Kabupaten Malang")
     with col2:
         bulan = st.selectbox("Bulan", [
             "Januari", "Februari", "Maret", "April",
