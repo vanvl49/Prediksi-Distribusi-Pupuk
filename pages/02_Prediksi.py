@@ -81,7 +81,11 @@ if submit:
     scaler = artifacts.get("scaler")
     kabupaten_mapping = artifacts.get("kabupaten_mapping")
 
-    if not all([model_klasifikasi, model_regresi, scaler, kabupaten_mapping]):
+    # Check if all required artifacts are not None
+    if any([model_klasifikasi is None, 
+            model_regresi is None, 
+            scaler is None, 
+            kabupaten_mapping is None]):
         st.error("Model belum dilatih! Silakan jalankan training terlebih dahulu!")
     else:
         try:
@@ -115,26 +119,17 @@ if submit:
                 "tipe_wilayah_encoded", "kabupaten_encoded"
             ]
             
-            # Create dataframe for scaling
-            data_scale = pd.DataFrame([{
-                "alokasi_urea": alokasi_urea,
-                "alokasi_NPK": alokasi_NPK,
-                "suhu": suhu,
-                "produktivitas_padi": produktivitas_padi,
-                "produktivitas_jagung": produktivitas_jagung,
-                "produktivitas_kedelai": produktivitas_kedelai,
-                "luas_panen_total": luas_panen_total,
-                "produksi_total_ton": produksi_total_ton,
-                "kabupaten_encoded": kabupaten_encoded,
-                "tipe_wilayah_encoded": tipe_wilayah_encoded
-            }])
-            
-            # Scale numeric features (as per scaler's feature set)
-            numeric_columns = [
-                "curah_hujan", "suhu", "produktivitas_padi", "produktivitas_jagung",
-                "produktivitas_kedelai", "luas_panen_total", "produksi_total_ton",
-                "alokasi_urea", "alokasi_NPK", "kabupaten_encoded"
+            # Numeric features (exact same as data_preprocessing.py)
+            fitur_numerik = [
+                "curah_hujan", "suhu",
+                "produktivitas_padi", "produktivitas_jagung",
+                "produktivitas_kedelai",
+                "luas_panen_total", "produksi_total_ton",
+                "alokasi_urea", "alokasi_NPK",
+                "kabupaten_encoded"
             ]
+            
+            # Build data for scaling (exact columns in scaler's fit order!)
             data_full = pd.DataFrame([{
                 "curah_hujan": curah_hujan,
                 "suhu": suhu,
@@ -145,13 +140,16 @@ if submit:
                 "produksi_total_ton": produksi_total_ton,
                 "alokasi_urea": alokasi_urea,
                 "alokasi_NPK": alokasi_NPK,
-                "kabupaten_encoded": kabupaten_encoded,
-                "tipe_wilayah_encoded": tipe_wilayah_encoded
+                "kabupaten_encoded": kabupaten_encoded
             }])
             
-            # Apply scaling (fill missing with median if needed - here we use input)
-            scaled_data = scaler.transform(data_full[numeric_columns])
-            data_scaled = pd.DataFrame(scaled_data, columns=numeric_columns)
+            # Apply scaling (fill missing with median if needed, but our inputs are all provided)
+            # But since data_full may not have median values, we can just scale directly!
+            scaled_data = scaler.transform(data_full[fitur_numerik])
+            data_scaled = pd.DataFrame(scaled_data, columns=fitur_numerik)
+            
+            # Add other features (tipe_wilayah_encoded - it wasn't scaled!)
+            data_scaled["tipe_wilayah_encoded"] = tipe_wilayah_encoded
             
             # --- Step 3: Classification ---
             # Prepare classification input

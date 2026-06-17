@@ -3,7 +3,7 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 
-st.markdown("# 🌾 Dashboard")
+st.markdown("# Dashboard")
 
 # Access artifacts from session state
 if "artifacts" in st.session_state:

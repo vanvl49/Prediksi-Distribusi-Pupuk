@@ -104,6 +104,18 @@ st.session_state.artifacts = artifacts
 st.sidebar.subheader("Selamat Datang!")
 st.sidebar.info("Sistem ini untuk memprediksi tingkat kebutuhan pupuk dan distribusi pupuk di Jawa Timur.")
 
+# Initialize session state for page navigation
+pages = ["Dashboard", "Prediksi", "Model Info"]
+if "page" not in st.session_state:
+    st.session_state.page = "Dashboard"
+
+# Sidebar navigation
+st.session_state.page = st.sidebar.radio(
+    "Navigasi Halaman",
+    pages,
+    index=pages.index(st.session_state.page)
+)
+
 # Now handle routing
 page = st.session_state.page
 
