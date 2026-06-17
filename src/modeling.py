@@ -2,6 +2,16 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
+import os
+import sys
+import joblib
+
+# Handle imports when running from different directories
+current_dir = os.path.dirname(os.path.abspath(__file__))
+parent_dir = os.path.dirname(current_dir)
+sys.path.insert(0, current_dir)
+sys.path.insert(0, parent_dir)
+
 from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 from sklearn.metrics import (
     accuracy_score, classification_report, confusion_matrix,
@@ -9,7 +19,80 @@ from sklearn.metrics import (
 )
 from xgboost import XGBClassifier, XGBRegressor
 
+# Try both import styles
+try:
+    from data_preprocessing import preprocess_data
+    from evaluation import evaluate_all
+except ImportError:
+    from src.data_preprocessing import preprocess_data
+    from src.evaluation import evaluate_all
+
 RANDOM_STATE = 42
+
+
+def main():
+    # Check if preprocessed data exists
+    data_files = [
+        "data/training_unscaled.csv",
+        "data/testing_unscaled.csv",
+        "data/distribusi_pupuk_training.csv",
+        "data/distribusi_pupuk_test.csv",
+        "models/scaler.pkl",
+        "models/freq_map.pkl"
+    ]
+    all_files_exist = all(os.path.exists(f) for f in data_files)
+
+    if not all_files_exist:
+        # Preprocessing data
+        print("=" * 60)
+        print("MEMULAI PREPROCESSING DATA")
+        print("=" * 60)
+        train_scaled, test_scaled, scaler, freq_map = preprocess_data(
+            "data/Distribusi_Pupuk_Jatim_2023-2025.csv"
+        )
+        # Load unscaled data from preprocessing output
+        train_unscaled = pd.read_csv("data/training_unscaled.csv")
+        test_unscaled = pd.read_csv("data/testing_unscaled.csv")
+    else:
+        print("=" * 60)
+        print("PREPROCESSED DATA DITEMUKAN - MENSKIP PREPROCESSING")
+        print("=" * 60)
+        # Load preprocessed data
+        train_unscaled = pd.read_csv("data/training_unscaled.csv")
+        test_unscaled = pd.read_csv("data/testing_unscaled.csv")
+        train_scaled = pd.read_csv("data/distribusi_pupuk_training.csv")
+        test_scaled = pd.read_csv("data/distribusi_pupuk_test.csv")
+        scaler = joblib.load("models/scaler.pkl")
+        freq_map = joblib.load("models/freq_map.pkl")
+
+    # Create composite index
+    train_unscaled, test_unscaled = create_composite_index(train_unscaled, test_unscaled)
+
+    # Train classification model
+    classification_results = train_classification_model(
+        train_scaled, test_scaled, train_unscaled, test_unscaled
+    )
+
+    # Train regression model
+    regression_results = train_regression_model(classification_results)
+
+    # Save models
+    os.makedirs("models", exist_ok=True)
+    joblib.dump(classification_results["model_klasifikasi"], "models/classification_model.pkl")
+    joblib.dump(regression_results["model_regresi"], "models/regression_model.pkl")
+    joblib.dump(classification_results, "models/classification_results.pkl")
+    joblib.dump(regression_results, "models/regression_results.pkl")
+
+    # Evaluate models
+    evaluate_all(classification_results, regression_results)
+
+    print("\n" + "=" * 60)
+    print("TRAINING & EVALUASI SELESAI - MODEL DIPERSEMBAHKAN DI FOLDER models/")
+    print("=" * 60)
+
+
+if __name__ == "__main__":
+    main()
 
 
 def normalisasi_minmax(series, ref_min, ref_max):

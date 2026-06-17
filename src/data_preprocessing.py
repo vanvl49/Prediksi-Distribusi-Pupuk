@@ -1,5 +1,7 @@
 import pandas as pd
 import numpy as np
+import os
+import joblib
 from sklearn.preprocessing import StandardScaler
 
 
@@ -200,13 +202,17 @@ def preprocess_data(input_path: str, output_dir: str = "data"):
         print(f"  - {f}")
 
     # Export data
-    import os
     os.makedirs(output_dir, exist_ok=True)
+    os.makedirs("models", exist_ok=True)
 
     df_train.to_csv(os.path.join(output_dir, "training_unscaled.csv"), index=False)
     df_test.to_csv(os.path.join(output_dir, "testing_unscaled.csv"), index=False)
     df_train_scaled.to_csv(os.path.join(output_dir, "distribusi_pupuk_training.csv"), index=False)
     df_test_scaled.to_csv(os.path.join(output_dir, "distribusi_pupuk_test.csv"), index=False)
+    
+    joblib.dump(scaler, os.path.join("models", "scaler.pkl"))
+    joblib.dump(freq_map, os.path.join("models", "freq_map.pkl"))
+    print("\nSaved scaler and freq_map to models/ directory.")
 
     print(f"\nFinal train_scaled shape: {df_train_scaled[fitur_final].shape}")
     print(f"Final test_scaled shape: {df_test_scaled[fitur_final].shape}")
